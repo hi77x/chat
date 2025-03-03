@@ -1,0 +1,17 @@
+{
+  "name": "telegram-mini-app",
+  "version": "1.0.0",
+  "description": "Telegram Mini App for Crow Cage",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=22.3.0"
+  },
+  
+  "dependencies": {
+    "axios": "^1.8.1",
+    "express": "^4.21.2"
+  }
+}
