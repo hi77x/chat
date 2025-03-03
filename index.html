@@ -227,12 +227,10 @@
   </div>
   <button class="new-chat-btn" id="new-chat-btn">Создать новый чат</button>
 <script>
-/* 
+/*
  * script.js
- * Этот скрипт отвечает за управление боковым меню, анимацией звезд и отображением информации пользователя Telegram.
- * Обновлён для корректного получения аватарки, имени и ID чата пользователя.
+ * Улучшенный вариант с более подробным логированием и fallback-данными, если Telegram.WebApp недоступен.
  */
-
  (function() {
     // Получаем элементы DOM
     const hamburger = document.getElementById('hamburger');
@@ -248,10 +246,8 @@
     });
 
     document.addEventListener('click', (e) => {
-        if (sidebar.classList.contains('active')) {
-            if (!sidebar.contains(e.target) && !hamburger.contains(e.target)) {
-                sidebar.classList.remove('active');
-            }
+        if (sidebar.classList.contains('active') && !sidebar.contains(e.target) && !hamburger.contains(e.target)) {
+            sidebar.classList.remove('active');
         }
     });
 
@@ -259,14 +255,12 @@
     let touchStartX = null;
     let touchStartY = null;
     const swipeThreshold = 50;
-
     document.addEventListener('touchstart', (e) => {
         if (e.touches.length === 1) {
             touchStartX = e.touches[0].clientX;
             touchStartY = e.touches[0].clientY;
         }
     }, false);
-
     document.addEventListener('touchend', (e) => {
         if (touchStartX === null) return;
         const touchEndX = e.changedTouches[0].clientX;
@@ -284,33 +278,26 @@
         touchStartY = null;
     }, false);
 
-    // Функции для создания анимации "взрыва" звезд
+    // Функции для анимации звезд
     function createBurst(x, y) {
         const burstCount = 8;
         for (let i = 0; i < burstCount; i++) {
             createStar(x, y);
         }
     }
-
     function createStar(x, y) {
         const star = document.createElement('div');
         star.classList.add('burst-star');
         star.innerHTML = '&#9733;';
         const angle = Math.random() * 2 * Math.PI;
         const distance = 30 + Math.random() * 20;
-        const dx = Math.cos(angle) * distance + 'px';
-        const dy = Math.sin(angle) * distance + 'px';
-        star.style.setProperty('--dx', dx);
-        star.style.setProperty('--dy', dy);
+        star.style.setProperty('--dx', Math.cos(angle) * distance + 'px');
+        star.style.setProperty('--dy', Math.sin(angle) * distance + 'px');
         star.style.left = (x - 10) + 'px';
         star.style.top = (y - 10) + 'px';
         document.body.appendChild(star);
-        star.addEventListener('animationend', () => {
-            star.remove();
-        });
+        star.addEventListener('animationend', () => { star.remove(); });
     }
-
-    // Запускаем анимацию "взрыва" звезд каждые 1.5 секунды
     setInterval(() => {
         const rect = premiumStar.getBoundingClientRect();
         const x = rect.left + rect.width / 2;
@@ -318,52 +305,73 @@
         createBurst(x, y);
     }, 1500);
 
-    // Обработка клика по рекламному баннеру для его скрытия
+    // Скрытие рекламного баннера по клику
     closeAd.addEventListener('click', (e) => {
         e.stopPropagation();
         adBanner.style.display = 'none';
     });
 
-    // Функция инициализации данных пользователя Telegram
+    // Функция для отображения информации пользователя
+    function displayUser(user) {
+        console.log('Отображаем данные пользователя:', user);
+        document.getElementById('user-name').textContent = user.first_name || '';
+        document.getElementById('user-chatid').textContent = 'ID: ' + (user.id || '');
+        
+        if (user.photo_url) {
+            const avatarImg = document.getElementById('avatar-img');
+            avatarImg.src = user.photo_url;
+            avatarImg.style.display = 'block';
+            // Чистим текст внутри блока-аватара (если был текст по умолчанию)
+            document.getElementById('avatar').textContent = '';
+        } else {
+            const avatarDiv = document.getElementById('avatar');
+            avatarDiv.textContent = user.first_name ? user.first_name[0] : '';
+            avatarDiv.style.color = '#fff';
+            avatarDiv.style.background = 'var(--premium-gradient)';
+            avatarDiv.style.textAlign = 'center';
+            avatarDiv.style.lineHeight = '50px';
+            avatarDiv.style.fontSize = '20px';
+            // Скрываем img, если она не нужна\n            document.getElementById('avatar-img').style.display = 'none';
+        }
+    }
+
+    // Инициализация пользователя
     window.addEventListener('load', () => {
+        console.log('Страница загружена');
         if (window.Telegram && window.Telegram.WebApp) {
+            console.log('Telegram.WebApp обнаружен');
             Telegram.WebApp.ready();
-            // Безопасное получение данных пользователя
             const initDataUnsafe = Telegram.WebApp.initDataUnsafe;
+            console.log('initDataUnsafe:', initDataUnsafe);
             const user = initDataUnsafe && initDataUnsafe.user ? initDataUnsafe.user : null;
             if (user) {
-                // Отображаем имя и chat ID
-                document.getElementById('user-name').textContent = user.first_name || '';
-                document.getElementById('user-chatid').textContent = 'ID: ' + (user.id ? user.id : '');
-
-                // Если есть фото пользователя, выводим его аватарку
-                if (user.photo_url) {
-                    const avatarImg = document.getElementById('avatar-img');
-                    avatarImg.src = user.photo_url;
-                    avatarImg.style.display = 'block';
-                } else {
-                    // Если фото нет, отображаем первую букву имени с градиентным фоном
-                    const avatarDiv = document.getElementById('avatar');
-                    avatarDiv.textContent = user.first_name ? user.first_name[0] : '';
-                    avatarDiv.style.color = '#fff';
-                    avatarDiv.style.background = 'var(--premium-gradient)';
-                    avatarDiv.style.textAlign = 'center';
-                    avatarDiv.style.lineHeight = '50px';
-                    avatarDiv.style.fontSize = '20px';
-                }
+                displayUser(user);
             } else {
-                console.error('Данные пользователя Telegram недоступны.');
+                console.warn('Данные пользователя Telegram пусты. Используем fallback-данные.');
+                const testUser = {
+                    id: 987654321,
+                    first_name: 'Fallback',
+                    photo_url: '' // можно указать URL для тестового аватара, если нужно
+                };
+                displayUser(testUser);
             }
         } else {
-            console.error('Telegram WebApp не доступен.');
+            console.warn('Telegram.WebApp не обнаружен, используются тестовые данные.');
+            const testUser = {
+                id: 987654321,
+                first_name: 'Fallback',
+                photo_url: 'https://via.placeholder.com/50'
+            };
+            displayUser(testUser);
         }
     });
 
-    // Обработка кнопки создания нового чата
+    // Обработка кнопки нового чата
     newChatBtn.addEventListener('click', () => {
         alert('Запускаем новый чат!');
     });
 })();
+
 </script>
 </body>
 </html>
