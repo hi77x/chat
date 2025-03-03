@@ -229,81 +229,87 @@
 <script>
 "use strict";
 
-// Функция для показа данных пользователя
-function showUserData(user) {
-  // Формируем полное имя
+// Функция для отображения аватара в виде первой буквы имени
+function displayLetterAvatar(user) {
+  const avatarDiv = document.getElementById("avatar");
+  avatarDiv.textContent = user.first_name ? user.first_name[0].toUpperCase() : "";
+  avatarDiv.style.color = "#fff";
+  avatarDiv.style.background = "var(--premium-gradient)";
+  avatarDiv.style.textAlign = "center";
+  avatarDiv.style.lineHeight = "50px";
+  avatarDiv.style.fontSize = "20px";
+  // Скрываем img-элемент
+  document.getElementById("avatar-img").style.display = "none";
+}
+
+// Функция для отображения базовой информации пользователя
+function showUserBasicInfo(user) {
   const fullName = user.first_name + (user.last_name ? " " + user.last_name : "");
   document.getElementById("user-name").textContent = fullName;
   document.getElementById("user-chatid").textContent = "ID: " + user.id;
-  
-  // Если есть photo_url, отображаем картинку
-  if (user.photo_url) {
-    const avatarImg = document.getElementById("avatar-img");
-    avatarImg.src = user.photo_url;
-    avatarImg.style.display = "block";
-    document.getElementById("avatar").textContent = "";
-  } else {
-    // Если аватарки нет, показываем первую букву имени
-    const avatarDiv = document.getElementById("avatar");
-    avatarDiv.textContent = user.first_name ? user.first_name[0].toUpperCase() : "";
-    avatarDiv.style.color = "#fff";
-    avatarDiv.style.background = "var(--premium-gradient)";
-    avatarDiv.style.textAlign = "center";
-    avatarDiv.style.lineHeight = "50px";
-    avatarDiv.style.fontSize = "20px";
-    // Скрываем тег с изображением, если он был ранее показан
-    document.getElementById("avatar-img").style.display = "none";
-  }
 }
 
-// Ждём полной загрузки DOM
+// Ждем полной загрузки DOM
 document.addEventListener("DOMContentLoaded", () => {
-  // Инициализируем Telegram WebApp, если он доступен
+  // Проверяем наличие Telegram WebApp
   if (window.Telegram && window.Telegram.WebApp) {
     Telegram.WebApp.ready();
-    let user = Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user;
+    let user = (Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user) || null;
     
-    // Если данные пользователя не получены (например, при локальном тестировании), задаём тестовые данные
+    // Если данные пользователя не получены (например, при локальном тестировании),
+    // задаём тестовые данные. Для продакшена этот блок можно удалить.
     if (!user) {
       console.warn("Данные пользователя не получены из Telegram WebApp. Используем тестовые данные.");
       user = {
         id: 123456789,
         first_name: "Имя",
         last_name: "Фамилия",
-        photo_url: "" // Можно указать URL тестового аватара, например: 'https://via.placeholder.com/50'
+        photo_url: ""
       };
     }
     
-    // Если хотите использовать метод getUserProfilePhotos для получения аватарки через API, раскомментируйте блок ниже
-    // и замените <your_bot_token> на токен вашего бота.
-    /*
-    if (window.Telegram.WebApp.API && typeof Telegram.WebApp.API.getUserProfilePhotos === 'function') {
+    // Выводим базовую информацию о пользователе
+    showUserBasicInfo(user);
+    
+    // Пытаемся получить аватарку через API бота
+    if (window.Telegram.WebApp.API && typeof Telegram.WebApp.API.getUserProfilePhotos === "function") {
       Telegram.WebApp.API.getUserProfilePhotos({ user_id: user.id, offset: 0, limit: 1 })
         .then(photos => {
-          if (photos.total_count > 0 && photos.photos[0].length > 0) {
+          // Проверяем, что найдено хотя бы одно фото
+          if (photos.total_count > 0 && photos.photos[0] && photos.photos[0].length > 0) {
             const fileId = photos.photos[0][0].file_id;
-            const fileUrl = `https://api.telegram.org/file/bot<your_bot_token>/${fileId}`;
+            // Формируем URL для получения файла. Необходимо заменить <your_bot_token> на реальный токен бота.
+            const fileUrl = `https://api.telegram.org/file/bot7856336539:AAFYULTPflxCljl2aStdw4r8a_ZBLUxwXrk/${fileId}`;
             const avatarImg = document.getElementById("avatar-img");
             avatarImg.src = fileUrl;
             avatarImg.style.display = "block";
+            // Очищаем блок с текстовым аватаром
             document.getElementById("avatar").textContent = "";
           } else {
-            showUserData(user);
+            // Если фото не найдены, используем текстовый аватар
+            displayLetterAvatar(user);
           }
         })
-        .catch(() => showUserData(user));
+        .catch(error => {
+          console.error("Ошибка при получении аватарки: ", error);
+          displayLetterAvatar(user);
+        });
     } else {
-      showUserData(user);
+      // В случае отсутствия метода API используем базовые данные (например, field photo_url, если есть)
+      if (user.photo_url) {
+        const avatarImg = document.getElementById("avatar-img");
+        avatarImg.src = user.photo_url;
+        avatarImg.style.display = "block";
+        document.getElementById("avatar").textContent = "";
+      } else {
+        displayLetterAvatar(user);
+      }
     }
-    */
-
-    // Показываем данные пользователя
-    showUserData(user);
   } else {
     console.error("Telegram.WebApp недоступен.");
   }
 
-  // Основной код интерфейса
+  // Далее – основной код интерфейса (управление боковой панелью, анимация звезд и т.д.)
   const hamburger = document.getElementById("hamburger");
   const sidebar = document.getElementById("sidebar");
   const premiumStar = document.getElementById("premium-star");
@@ -311,20 +317,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const closeAd = document.getElementById("close-ad");
   const newChatBtn = document.getElementById("new-chat-btn");
 
-  // Управление боковой панелью
+  // Открытие/закрытие боковой панели по клику на иконку-гамбургер
   hamburger.addEventListener("click", () => {
     sidebar.classList.toggle("active");
   });
 
+  // Закрытие боковой панели при клике вне её области
   document.addEventListener("click", (e) => {
-    if (sidebar.classList.contains("active")) {
-      if (!sidebar.contains(e.target) && !hamburger.contains(e.target)) {
-        sidebar.classList.remove("active");
-      }
+    if (sidebar.classList.contains("active") && !sidebar.contains(e.target) && !hamburger.contains(e.target)) {
+      sidebar.classList.remove("active");
     }
   });
 
-  // Обработка свайпов для открытия/закрытия панели
+  // Обработка свайпов для открытия/закрытия боковой панели
   let touchStartX = null;
   let touchStartY = null;
   const swipeThreshold = 50;
@@ -398,7 +403,6 @@ document.addEventListener("DOMContentLoaded", () => {
     alert("Запускаем новый чат!");
   });
 });
-
 </script>
 </body>
 </html>
