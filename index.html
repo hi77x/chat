@@ -227,178 +227,176 @@
   </div>
   <button class="new-chat-btn" id="new-chat-btn">Создать новый чат</button>
 <script>
-/*
-  Данный скрипт для интеграции с Telegram WebApp.
-  Он корректно получает данные пользователя (имя, id) и его аватарку.
-  Если у пользователя нет аватарки, то вместо неё будет показана первая буква его имени.
-  Также реализовано управление боковой панелью, рекламным баннером и анимацией звезд.
-*/
+"use strict";
 
-// Получение элементов DOM
-const hamburger = document.getElementById('hamburger');
-const sidebar = document.getElementById('sidebar');
-const premiumStar = document.getElementById('premium-star');
-const adBanner = document.getElementById('ad-banner');
-const closeAd = document.getElementById('close-ad');
-const newChatBtn = document.getElementById('new-chat-btn');
+// Функция для показа данных пользователя
+function showUserData(user) {
+  // Формируем полное имя
+  const fullName = user.first_name + (user.last_name ? " " + user.last_name : "");
+  document.getElementById("user-name").textContent = fullName;
+  document.getElementById("user-chatid").textContent = "ID: " + user.id;
+  
+  // Если есть photo_url, отображаем картинку
+  if (user.photo_url) {
+    const avatarImg = document.getElementById("avatar-img");
+    avatarImg.src = user.photo_url;
+    avatarImg.style.display = "block";
+    document.getElementById("avatar").textContent = "";
+  } else {
+    // Если аватарки нет, показываем первую букву имени
+    const avatarDiv = document.getElementById("avatar");
+    avatarDiv.textContent = user.first_name ? user.first_name[0].toUpperCase() : "";
+    avatarDiv.style.color = "#fff";
+    avatarDiv.style.background = "var(--premium-gradient)";
+    avatarDiv.style.textAlign = "center";
+    avatarDiv.style.lineHeight = "50px";
+    avatarDiv.style.fontSize = "20px";
+    // Скрываем тег с изображением, если он был ранее показан
+    document.getElementById("avatar-img").style.display = "none";
+  }
+}
 
-// Управление боковой панелью
-hamburger.addEventListener('click', () => {
-    sidebar.classList.toggle('active');
-});
-
-document.addEventListener('click', (e) => {
-    if (sidebar.classList.contains('active')) {
-        if (!sidebar.contains(e.target) && !hamburger.contains(e.target)) {
-            sidebar.classList.remove('active');
-        }
+// Ждём полной загрузки DOM
+document.addEventListener("DOMContentLoaded", () => {
+  // Инициализируем Telegram WebApp, если он доступен
+  if (window.Telegram && window.Telegram.WebApp) {
+    Telegram.WebApp.ready();
+    let user = Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user;
+    
+    // Если данные пользователя не получены (например, при локальном тестировании), задаём тестовые данные
+    if (!user) {
+      console.warn("Данные пользователя не получены из Telegram WebApp. Используем тестовые данные.");
+      user = {
+        id: 123456789,
+        first_name: "Имя",
+        last_name: "Фамилия",
+        photo_url: "" // Можно указать URL тестового аватара, например: 'https://via.placeholder.com/50'
+      };
     }
-});
+    
+    // Если хотите использовать метод getUserProfilePhotos для получения аватарки через API, раскомментируйте блок ниже
+    // и замените <your_bot_token> на токен вашего бота.
+    /*
+    if (window.Telegram.WebApp.API && typeof Telegram.WebApp.API.getUserProfilePhotos === 'function') {
+      Telegram.WebApp.API.getUserProfilePhotos({ user_id: user.id, offset: 0, limit: 1 })
+        .then(photos => {
+          if (photos.total_count > 0 && photos.photos[0].length > 0) {
+            const fileId = photos.photos[0][0].file_id;
+            const fileUrl = `https://api.telegram.org/file/bot<your_bot_token>/${fileId}`;
+            const avatarImg = document.getElementById("avatar-img");
+            avatarImg.src = fileUrl;
+            avatarImg.style.display = "block";
+            document.getElementById("avatar").textContent = "";
+          } else {
+            showUserData(user);
+          }
+        })
+        .catch(() => showUserData(user));
+    } else {
+      showUserData(user);
+    }
+    */
 
-// Обработка свайпов для открытия/закрытия панели
-let touchStartX = null;
-let touchStartY = null;
-const swipeThreshold = 50;
+    // Показываем данные пользователя
+    showUserData(user);
+  } else {
+    console.error("Telegram.WebApp недоступен.");
+  }
 
-document.addEventListener('touchstart', (e) => {
+  // Основной код интерфейса
+  const hamburger = document.getElementById("hamburger");
+  const sidebar = document.getElementById("sidebar");
+  const premiumStar = document.getElementById("premium-star");
+  const adBanner = document.getElementById("ad-banner");
+  const closeAd = document.getElementById("close-ad");
+  const newChatBtn = document.getElementById("new-chat-btn");
+
+  // Управление боковой панелью
+  hamburger.addEventListener("click", () => {
+    sidebar.classList.toggle("active");
+  });
+
+  document.addEventListener("click", (e) => {
+    if (sidebar.classList.contains("active")) {
+      if (!sidebar.contains(e.target) && !hamburger.contains(e.target)) {
+        sidebar.classList.remove("active");
+      }
+    }
+  });
+
+  // Обработка свайпов для открытия/закрытия панели
+  let touchStartX = null;
+  let touchStartY = null;
+  const swipeThreshold = 50;
+
+  document.addEventListener("touchstart", (e) => {
     if (e.touches.length === 1) {
-        touchStartX = e.touches[0].clientX;
-        touchStartY = e.touches[0].clientY;
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
     }
-}, false);
+  }, false);
 
-document.addEventListener('touchend', (e) => {
+  document.addEventListener("touchend", (e) => {
     if (touchStartX === null) return;
     const touchEndX = e.changedTouches[0].clientX;
     const touchEndY = e.changedTouches[0].clientY;
     const deltaX = touchEndX - touchStartX;
     const deltaY = touchEndY - touchStartY;
     if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > swipeThreshold) {
-        if (deltaX > 0 && touchStartX < 30) {
-            sidebar.classList.add('active');
-        } else if (deltaX < 0 && sidebar.classList.contains('active')) {
-            sidebar.classList.remove('active');
-        }
+      if (deltaX > 0 && touchStartX < 30) {
+        sidebar.classList.add("active");
+      } else if (deltaX < 0 && sidebar.classList.contains("active")) {
+        sidebar.classList.remove("active");
+      }
     }
     touchStartX = null;
     touchStartY = null;
-}, false);
+  }, false);
 
-// Функции для создания анимации "взрыва" звезд
-function createBurst(x, y) {
+  // Функции для создания анимации "взрыва" звезд
+  function createBurst(x, y) {
     const burstCount = 8;
     for (let i = 0; i < burstCount; i++) {
-        createStar(x, y);
+      createStar(x, y);
     }
-}
+  }
 
-function createStar(x, y) {
-    const star = document.createElement('div');
-    star.classList.add('burst-star');
-    star.innerHTML = '&#9733;';
+  function createStar(x, y) {
+    const star = document.createElement("div");
+    star.classList.add("burst-star");
+    star.innerHTML = "&#9733;";
     const angle = Math.random() * 2 * Math.PI;
     const distance = 30 + Math.random() * 20;
-    const dx = Math.cos(angle) * distance + 'px';
-    const dy = Math.sin(angle) * distance + 'px';
-    star.style.setProperty('--dx', dx);
-    star.style.setProperty('--dy', dy);
-    star.style.left = (x - 10) + 'px';
-    star.style.top = (y - 10) + 'px';
+    const dx = Math.cos(angle) * distance + "px";
+    const dy = Math.sin(angle) * distance + "px";
+    star.style.setProperty("--dx", dx);
+    star.style.setProperty("--dy", dy);
+    star.style.left = (x - 10) + "px";
+    star.style.top = (y - 10) + "px";
     document.body.appendChild(star);
-    star.addEventListener('animationend', () => {
-        star.remove();
+    star.addEventListener("animationend", () => {
+      star.remove();
     });
-}
+  }
 
-// Запуск анимации вокруг премиум-звезды
-setInterval(() => {
+  // Запуск анимации вокруг премиум-звезды
+  setInterval(() => {
     const rect = premiumStar.getBoundingClientRect();
     const x = rect.left + rect.width / 2;
     const y = rect.top + rect.height / 2;
     createBurst(x, y);
-}, 1500);
+  }, 1500);
 
-// Обработка закрытия рекламного баннера
-closeAd.addEventListener('click', (e) => {
+  // Обработка закрытия рекламного баннера
+  closeAd.addEventListener("click", (e) => {
     e.stopPropagation();
-    adBanner.style.display = 'none';
-});
+    adBanner.style.display = "none";
+  });
 
-// Функция для установки аватара пользователя
-function setUserAvatar(user) {
-    // Если возможно, пытаемся получить аватар через метод getUserProfilePhotos
-    // (Документация Telegram Bot API требует обращения к getUserProfilePhotos по user_id)
-    // Здесь предполагается, что Telegram.WebApp.API.getUserProfilePhotos существует и возвращает промис.
-    if (typeof Telegram !== 'undefined' && Telegram.WebApp && Telegram.WebApp.API && typeof Telegram.WebApp.API.getUserProfilePhotos === 'function') {
-        Telegram.WebApp.API.getUserProfilePhotos({ user_id: user.id, offset: 0, limit: 1 })
-            .then(photos => {
-                // Проверяем, что есть хотя бы одно фото
-                if (photos.total_count > 0 && photos.photos[0].length > 0) {
-                    const fileId = photos.photos[0][0].file_id;
-                    // Формирование URL для получения файла. Замени <your_bot_token> на токен бота.
-                    const fileUrl = `https://api.telegram.org/file/bot<your_bot_token>/${fileId}`;
-                    const avatarImg = document.getElementById('avatar-img');
-                    avatarImg.src = fileUrl;
-                    avatarImg.style.display = 'block';
-                    // Скрываем текстовый аватар, если он был установлен
-                    document.getElementById('avatar').textContent = '';
-                } else {
-                    setLetterAvatar(user);
-                }
-            })
-            .catch(() => {
-                setLetterAvatar(user);
-            });
-    } else {
-        // Если метод отсутствует, используем заглушку
-        if (user.photo_url) {
-            const avatarImg = document.getElementById('avatar-img');
-            avatarImg.src = user.photo_url;
-            avatarImg.style.display = 'block';
-        } else {
-            setLetterAvatar(user);
-        }
-    }
-}
-
-// Функция для установки аватара в виде первой буквы имени
-function setLetterAvatar(user) {
-    const avatarDiv = document.getElementById('avatar');
-    avatarDiv.textContent = user.first_name ? user.first_name[0] : '';
-    avatarDiv.style.color = '#fff';
-    avatarDiv.style.background = 'var(--premium-gradient)';
-    avatarDiv.style.textAlign = 'center';
-    avatarDiv.style.lineHeight = '50px';
-    avatarDiv.style.fontSize = '20px';
-    // Если ранее был установлен img, скрываем его
-    const avatarImg = document.getElementById('avatar-img');
-    if (avatarImg) {
-        avatarImg.style.display = 'none';
-    }
-}
-
-// После загрузки страницы, инициализируем Telegram WebApp и получаем данные пользователя
-window.addEventListener('load', () => {
-    if (window.Telegram && window.Telegram.WebApp) {
-        Telegram.WebApp.ready();
-        const user = Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user;
-        if (user) {
-            // Выводим полное имя (если есть фамилия, добавляем её)
-            const fullName = (user.first_name || '') + (user.last_name ? (' ' + user.last_name) : '');
-            document.getElementById('user-name').textContent = fullName;
-            document.getElementById('user-chatid').textContent = `ID: ${user.id}`;
-            setUserAvatar(user);
-        } else {
-            console.error('Данные пользователя не получены.');
-        }
-    } else {
-        console.error('Telegram WebApp не доступен.');
-    }
-});
-
-// Обработка создания нового чата
-newChatBtn.addEventListener('click', () => {
-    alert('Запускаем новый чат!');
+  // Обработка кнопки создания нового чата
+  newChatBtn.addEventListener("click", () => {
+    alert("Запускаем новый чат!");
+  });
 });
 
 </script>
