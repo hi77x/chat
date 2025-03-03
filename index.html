@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Главная страница</title>
+  <style>
+    :root {
+      --premium-gradient: linear-gradient(45deg, #8e2de2, #4a00e0, #00c6ff);
+      --premium-text-size: 40px;
+      --ad-width: 220px;
+      --ad-height: 100px;
+    }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      outline: none;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #ffffff;
+      overflow-x: hidden;
+      min-height: 100vh;
+      position: relative;
+    }
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 110;
+      background: transparent;
+    }
+    .hamburger {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      width: 28px;
+      height: 20px;
+      cursor: pointer;
+    }
+    .hamburger span {
+      display: block;
+      height: 3px;
+      background: #333;
+      border-radius: 2px;
+    }
+    .hamburger span:nth-child(1) { width: 28px; }
+    .hamburger span:nth-child(2) { width: 18px; }
+    .hamburger span:nth-child(3) { opacity: 0; }
+    .premium-star {
+      font-size: var(--premium-text-size);
+      cursor: pointer;
+      padding: 5px 10px;
+      border-radius: 8px;
+      background: var(--premium-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      position: relative;
+    }
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: -260px;
+      width: 260px;
+      height: 100%;
+      background: #f9f9f9;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+      transition: left 0.3s ease-in-out;
+      padding: 20px;
+      z-index: 120;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .sidebar.active { left: 0; }
+    .sidebar h3 {
+      margin-bottom: 15px;
+      color: #333;
+      font-size: 18px;
+    }
+    .sidebar ul {
+      list-style: none;
+      padding-left: 0;
+      margin-bottom: 30px;
+    }
+    .sidebar ul li { margin-bottom: 10px; }
+    .sidebar ul li a {
+      text-decoration: none;
+      color: #333;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .ad-banner {
+      position: relative;
+      width: var(--ad-width);
+      height: var(--ad-height);
+      background: #e0e0e0;
+      margin: 0 auto 20px auto;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: #333;
+    }
+    .ad-banner .close-btn {
+      position: absolute;
+      top: 2px;
+      right: 4px;
+      font-size: 14px;
+      cursor: pointer;
+      color: #555;
+    }
+    .user-info {
+      display: flex;
+      align-items: center;
+      padding: 10px 0;
+      border-top: 1px solid #ddd;
+    }
+    .user-info .avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: #ccc;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .user-info .avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .user-info .user-details {
+      margin-left: 10px;
+      font-size: 14px;
+      color: #333;
+    }
+    .user-info .user-details div { line-height: 1.2; }
+    .content {
+      padding: 100px 20px 60px;
+      text-align: center;
+    }
+    .content .header-img {
+      width: 100%;
+      max-height: 300px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .new-chat-btn {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 15px 35px;
+      background: #6F4E37;
+      color: #fff;
+      border: none;
+      border-radius: 30px;
+      font-size: 16px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+      z-index: 110;
+    }
+    a:focus, button:focus, input:focus {
+      outline: none;
+      box-shadow: none;
+    }
+    .burst-star {
+      position: fixed;
+      font-size: 20px;
+      pointer-events: none;
+      z-index: 105;
+      background: var(--premium-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: burst 1s ease-out forwards;
+    }
+    @keyframes burst { 0% { opacity: 1; transform: translate(0,0) scale(1); } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.5); } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="hamburger" id="hamburger">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+    <div class="premium-star" id="premium-star">&#9733;</div>
+  </header>
+  <nav class="sidebar" id="sidebar">
+    <div>
+      <h3>Меню</h3>
+      <ul>
+        <li><a href="#">Задания</a></li>
+        <li><a href="#">Тарифы</a></li>
+        <li><a href="#">Модели</a></li>
+        <li><a href="#">Поддержка</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="ad-banner" id="ad-banner">
+        Рекламный баннер <span class="close-btn" id="close-ad">X</span>
+      </div>
+      <div class="user-info" id="user-info">
+        <div class="avatar" id="avatar">
+          <img src="" alt="avatar" id="avatar-img" style="display:none;">
+        </div>
+        <div class="user-details" id="user-details">
+          <div id="user-name"></div>
+          <div id="user-chatid"></div>
+        </div>
+      </div>
+    </div>
+  </nav>
+  <div class="content">
+    <img src="https://via.placeholder.com/800x300?text=Header+Image" alt="Header Image" class="header-img">
+    <p>Добро пожаловать на нашу страницу!</p>
+  </div>
+  <button class="new-chat-btn" id="new-chat-btn">Создать новый чат</button>
+<script>
+/* 
+ * script.js
+ * Этот скрипт отвечает за управление боковым меню, анимацией звезд и отображением информации пользователя Telegram.
+ * Обновлён для корректного получения аватарки, имени и ID чата пользователя.
+ */
+
+ (function() {
+    // Получаем элементы DOM
+    const hamburger = document.getElementById('hamburger');
+    const sidebar = document.getElementById('sidebar');
+    const premiumStar = document.getElementById('premium-star');
+    const adBanner = document.getElementById('ad-banner');
+    const closeAd = document.getElementById('close-ad');
+    const newChatBtn = document.getElementById('new-chat-btn');
+
+    // Функционал бургер-меню
+    hamburger.addEventListener('click', () => {
+        sidebar.classList.toggle('active');
+    });
+
+    document.addEventListener('click', (e) => {
+        if (sidebar.classList.contains('active')) {
+            if (!sidebar.contains(e.target) && !hamburger.contains(e.target)) {
+                sidebar.classList.remove('active');
+            }
+        }
+    });
+
+    // Обработка свайпов для мобильных устройств
+    let touchStartX = null;
+    let touchStartY = null;
+    const swipeThreshold = 50;
+
+    document.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        }
+    }, false);
+
+    document.addEventListener('touchend', (e) => {
+        if (touchStartX === null) return;
+        const touchEndX = e.changedTouches[0].clientX;
+        const touchEndY = e.changedTouches[0].clientY;
+        const deltaX = touchEndX - touchStartX;
+        const deltaY = touchEndY - touchStartY;
+        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > swipeThreshold) {
+            if (deltaX > 0 && touchStartX < 30) {
+                sidebar.classList.add('active');
+            } else if (deltaX < 0 && sidebar.classList.contains('active')) {
+                sidebar.classList.remove('active');
+            }
+        }
+        touchStartX = null;
+        touchStartY = null;
+    }, false);
+
+    // Функции для создания анимации "взрыва" звезд
+    function createBurst(x, y) {
+        const burstCount = 8;
+        for (let i = 0; i < burstCount; i++) {
+            createStar(x, y);
+        }
+    }
+
+    function createStar(x, y) {
+        const star = document.createElement('div');
+        star.classList.add('burst-star');
+        star.innerHTML = '&#9733;';
+        const angle = Math.random() * 2 * Math.PI;
+        const distance = 30 + Math.random() * 20;
+        const dx = Math.cos(angle) * distance + 'px';
+        const dy = Math.sin(angle) * distance + 'px';
+        star.style.setProperty('--dx', dx);
+        star.style.setProperty('--dy', dy);
+        star.style.left = (x - 10) + 'px';
+        star.style.top = (y - 10) + 'px';
+        document.body.appendChild(star);
+        star.addEventListener('animationend', () => {
+            star.remove();
+        });
+    }
+
+    // Запускаем анимацию "взрыва" звезд каждые 1.5 секунды
+    setInterval(() => {
+        const rect = premiumStar.getBoundingClientRect();
+        const x = rect.left + rect.width / 2;
+        const y = rect.top + rect.height / 2;
+        createBurst(x, y);
+    }, 1500);
+
+    // Обработка клика по рекламному баннеру для его скрытия
+    closeAd.addEventListener('click', (e) => {
+        e.stopPropagation();
+        adBanner.style.display = 'none';
+    });
+
+    // Функция инициализации данных пользователя Telegram
+    window.addEventListener('load', () => {
+        if (window.Telegram && window.Telegram.WebApp) {
+            Telegram.WebApp.ready();
+            // Безопасное получение данных пользователя
+            const initDataUnsafe = Telegram.WebApp.initDataUnsafe;
+            const user = initDataUnsafe && initDataUnsafe.user ? initDataUnsafe.user : null;
+            if (user) {
+                // Отображаем имя и chat ID
+                document.getElementById('user-name').textContent = user.first_name || '';
+                document.getElementById('user-chatid').textContent = 'ID: ' + (user.id ? user.id : '');
+
+                // Если есть фото пользователя, выводим его аватарку
+                if (user.photo_url) {
+                    const avatarImg = document.getElementById('avatar-img');
+                    avatarImg.src = user.photo_url;
+                    avatarImg.style.display = 'block';
+                } else {
+                    // Если фото нет, отображаем первую букву имени с градиентным фоном
+                    const avatarDiv = document.getElementById('avatar');
+                    avatarDiv.textContent = user.first_name ? user.first_name[0] : '';
+                    avatarDiv.style.color = '#fff';
+                    avatarDiv.style.background = 'var(--premium-gradient)';
+                    avatarDiv.style.textAlign = 'center';
+                    avatarDiv.style.lineHeight = '50px';
+                    avatarDiv.style.fontSize = '20px';
+                }
+            } else {
+                console.error('Данные пользователя Telegram недоступны.');
+            }
+        } else {
+            console.error('Telegram WebApp не доступен.');
+        }
+    });
+
+    // Обработка кнопки создания нового чата
+    newChatBtn.addEventListener('click', () => {
+        alert('Запускаем новый чат!');
+    });
+})();
+</script>
+</body>
+</html>
